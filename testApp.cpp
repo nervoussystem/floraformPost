@@ -32,9 +32,9 @@ float maxThicknessThick = maxThicknessThin;
 
 
 float rimT[2] = {.5,.5};
-float edgeT[2] = {.8,.8};
-float bodyT[2] = {1.5,1.5};
-float midBodyT[2] = {1.15,1.15};
+float edgeT[2] = {.75,.75};
+float midBodyT[2] = {.9,.9};
+float bodyT[2] = {1.2,1.2};
 
 float rimThick = rimT[0];
 float edgeThick = edgeT[0];
