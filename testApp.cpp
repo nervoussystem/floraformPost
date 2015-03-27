@@ -11,40 +11,29 @@ float threshold = .45;
 string file = "test.ply";
 bool paused = true;
 
-
+//hole stuff
 float maximumDist = 0; //10
 float geodesicSpacing = 1.25;//2
 float holeSpacing = 2.5;//2.5
-
-
 float thickness = 0.9;
 
-float edgeThickness = 0.5;
-
-float centerThickness = 0.8;
-float maxThickness = 0.9;
-//only these ones are used
-float centerThicknessThin = 0.8;//thickness close to the edge
-float maxThicknessThin = 1.5;//thickness far from the edge
-float centerThicknessThick = centerThicknessThin;
-float maxThicknessThick = maxThicknessThin;
-
-
-
+//thickened surface stuff
 float rimT[2] = {.5,.5};
 float edgeT[2] = {.75,.75};
-float midBodyT[2] = {.9,.9};
-float bodyT[2] = {1.2,1.2};
+float midBodyT[2] = {.9,1.5};
+float bodyT[2] = {1.2,2};
+float edgeDist = .75;
+float midBodyDist = 4;
 
 float rimThick = rimT[0];
 float edgeThick = edgeT[0];
 float bodyThick = bodyT[0];
 float midBodyThick = midBodyT[0];
 
-float edgeDist = .75;
-float midBodyDist = 4;
+
 
 //cuff ellipse
+bool useEllipse = false;
 ofVec2f centerPt(0,0);
 float radX = 27.68;
 float radY = 20.72;
@@ -99,6 +88,7 @@ void testApp::setup(){
 		if(v->boundary) {
 
 			ofVec3f pos = mesh.getVertex(i);
+			if(useEllipse){
 			float xTerm= pow( (pos.x - centerPt.x) , 2 ) / (radX*radX);
 			float yTerm = pow( (pos.y - centerPt.y) , 2 ) / (radY*radY);
 			if(xTerm + yTerm <= 1){
@@ -106,7 +96,8 @@ void testApp::setup(){
 			} else {
 				v->tag = true;
 			}
-
+			}
+			v->tag = true;
 		}
 	}
 	setupSolver(hmesh);
@@ -1584,23 +1575,26 @@ void testApp::exportColor() {
 
 		ofVec3f norm = mesh.getNormal(i);
 		ofVec3f pos = mesh.getVertex(i);
-
+		//transition
 		if(pos.y < 0) {
-			rimThick = rimT[1];
-			edgeThick = edgeT[1];
-			midBodyThick = midBodyT[1];
-			bodyThick = bodyT[1];
-		} else if(pos.y < 4.58) {
-			float t = pos.y/10;
+			
+
+			rimThick = rimT[0];
+			edgeThick = edgeT[0];
+			midBodyThick = midBodyT[0];
+			bodyThick = bodyT[0];
+
+		} else if(pos.y < 30) {
+			float t = pos.y/30;
 			rimThick = ofLerp(rimT[0],rimT[1],t);
 			edgeThick = ofLerp(edgeT[0],edgeT[1],t);
 			midBodyThick = ofLerp(midBodyT[0],midBodyT[1],t);
 			bodyThick = ofLerp(bodyT[0],bodyT[1],t);
 		} else {
-			rimThick = rimT[0];
-			edgeThick = edgeT[0];
-			midBodyThick = midBodyT[0];
-			bodyThick = bodyT[0];
+			rimThick = rimT[1];
+			edgeThick = edgeT[1];
+			midBodyThick = midBodyT[1];
+			bodyThick = bodyT[1];
 		}
 		float normVal = getThickness(d);
 		hmesh.vertices[i]->index = holeMesh.getNumVertices();
