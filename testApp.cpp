@@ -29,12 +29,10 @@ float maxThicknessThin = 1.5;//thickness far from the edge
 float centerThicknessThick = centerThicknessThin;
 float maxThicknessThick = maxThicknessThin;
 
-
-
 float rimT[2] = {.5,.5};
-float edgeT[2] = {.8,.8};
-float bodyT[2] = {1.5,1.5};
-float midBodyT[2] = {1.15,1.15};
+float edgeT[2] = {.8,.9};
+float midBodyT[2] = {.85,1.05};
+float bodyT[2] = {.9,1.2};
 
 float rimThick = rimT[0];
 float edgeThick = edgeT[0];
@@ -42,12 +40,12 @@ float bodyThick = bodyT[0];
 float midBodyThick = midBodyT[0];
 
 float edgeDist = .75;
-float midBodyDist = 4;
+float midBodyDist = 2;
 
 //cuff ellipse
 ofVec2f centerPt(0,0);
-float radX = 27.68;
-float radY = 20.72;
+float radX = 9.5;
+float radY = 9.5;
 
 hemesh hmesh;
 vector<float> a;
@@ -101,10 +99,12 @@ void testApp::setup(){
 			ofVec3f pos = mesh.getVertex(i);
 			float xTerm= pow( (pos.x - centerPt.x) , 2 ) / (radX*radX);
 			float yTerm = pow( (pos.y - centerPt.y) , 2 ) / (radY*radY);
+			v->tag = true;
 			if(xTerm + yTerm <= 1){
-				v->tag = false;
+				//v->tag = false;
 			} else {
 				v->tag = true;
+				v->tag = false;
 			}
 
 		}
@@ -148,8 +148,8 @@ void testApp::setup(){
 	updateMeshNormals(mesh);
 	
 	//calculate holes
-	//getGeodesics();
-	//getHolePts();
+	getGeodesics();
+	getHolePts();
 	//end calculate holes
 	
 //	saveLines();
@@ -226,29 +226,49 @@ crvVec3 getPt(vector<crvVec3> &crv, float t) {
 }
 
 crvPt findPt(polyLine * crv, float t, int startI, int endI) {
-	int midI = (endI+startI)/2;
+	if(endI-startI == 1) {
+		crvPt pt = crv->pts[startI];
+		crvPt pt2 = crv->pts[(endI)%crv->pts.size()];
 
-	crvPt pt = crv->pts[midI];
-	crvPt pt2 = crv->pts[(midI+1)%crv->pts.size()];
-	if(t < pt.t) {
-		return findPt(crv, t, startI, midI);
-	} else if(t > pt2.t) {
-		return findPt(crv, t, midI, endI);
-	} else {
 		crvPt out = pt;
 		out += (pt2-pt)*(t-pt.t);
 		out.t = t;
 		out.crv = crv;
 		return out;
 	}
+	int midI = (endI+startI)/2;
+
+
+	crvPt pt = crv->pts[midI];
+	//crvPt pt2 = crv->pts[(midI+1)%crv->pts.size()];
+	if(t < pt.t) {
+		return findPt(crv, t, startI, midI);
+	} else if(t > pt.t) { //pt2
+		return findPt(crv, t, midI, endI);
+	} else {
+		return pt;
+	}
+	/*else {
+		crvPt out = pt;
+		out += (pt2-pt)*(t-pt.t);
+		out.t = t;
+		out.crv = crv;
+		return out;
+	}
+	*/
 }
 
 crvPt getPt(polyLine * crv, float t) {
 	float cLen = crv->length;
-	if(t < 0) t += cLen;
-	else if(t >= cLen) t -= cLen;
+	if(crv->isClosed) {
+		if(t < 0) t += cLen;
+		else if(t >= cLen) t -= cLen;
+	} else {
+		if(t < 0) t = 0;
+		else if(t > cLen) t = cLen;
+	}
 	int startI = 0;
-	int endI = crv->pts.size();
+	int endI = crv->pts.size()-1;
 	if(crv->isClosed) {
 		endI++;
 	}
@@ -279,6 +299,14 @@ float projectPtToLine(const ofVec3f &pt, const crvPt &l1, const crvPt &l2, crvPt
 	out = l1+dir*t/len;
 	out.t = l1.t+t;
 	return out.distanceSquared(pt);
+}
+
+void intersect_parents(	vector<crvPt *> & parents1, vector<crvPt *> & parents2, vector<crvPt *> & out) {
+	for(auto p : parents1) {
+		if(find(parents2.begin(), parents2.end(), p) != parents2.end()) {
+			out.push_back(p);
+		}
+	}
 }
 
 /*
@@ -417,9 +445,9 @@ void testApp::getHolePts() {
 		cout << "projecting points" << endl;
 		for(int j=0;j<pts->size();++j) {
 			newPt = projectPt(pts->at(j), crvs);
-			if(newPt.distanceSquared(pts->at(j)) < geodesicSpacing*geodesicSpacing*2.25) {
+			if(newPt.distanceSquared(pts->at(j)) < geodesicSpacing*geodesicSpacing*2) {
 				newPt2 = projectPt(newPt, crvs2);
-				if(newPt2.distanceSquared(newPt) < geodesicSpacing*geodesicSpacing*2.25) {
+				if(newPt2.distanceSquared(newPt) < geodesicSpacing*geodesicSpacing*2) {
 					newPt2.parents.push_back(new crvPt(pts->at(j)));
 					//pts2.push_back(newPt2);
 					for(int k=0;k<crvs2.size();++k) {
@@ -441,7 +469,13 @@ void testApp::getHolePts() {
 				pts2->clear();
 				//get dual
 
-				for(int j=0;j<crv->size();++j) {
+				//need to check for closed curve
+				polyLine * line = crv->at(0).crv;
+				int end = crv->size();
+				if(!line->isClosed) {
+					end--;
+				}
+				for(int j=0;j<end;++j) {
 					crvPt mPt = mergePts(crv->at(j),crv->at((j+1)%crv->size()));
 					pts2->push_back(mPt);
 				}
@@ -449,17 +483,58 @@ void testApp::getHolePts() {
 				//merge
 				//pts = new vector<crvPt>();
 				pts->clear();
-				for(int j=0;j<pts2->size();++j) {
+
+				if(!line->isClosed) {
+					crvPt mPt = getPt(line,0);
+					//what about parent?
+					pts->push_back(mPt);
+				}
+				bool merged = false;
+				crvPt firstMerge;
+
+				end = pts2->size();
+				if(!line->isClosed) {
+					end--;
+				}
+				
+				for(int j=0;j<end;++j) {
 					crvPt p = pts2->at(j);
 					crvPt p2 = pts2->at((j+1) % pts2->size());
-					if(crvDistance(p,p2) < holeSpacing * .5) {
-						crvPt mPt = mergePts(p,p2);
-						pts2->at((j+1) % pts2->size()) = mPt;
+					float crvDist = abs(crvDistance(p,p2));
+					if(crvDist < holeSpacing * .5) {
+						if(merged) {
+							p.t = firstMerge.t;
+							crvPt mPt = mergePts(p, p2);
+							pts2->at((j+1) % pts2->size()) = mPt;
+						} else {
+							crvPt mPt = mergePts(p,p2);
+							firstMerge = p;
+							pts2->at((j+1) % pts2->size()) = mPt;
+							merged = true;
+						}
+					} else if(crvDist > holeSpacing*1.5) {//split
+						pts->push_back(p);
+						crvPt mPt = getPt(line,p.t+crvDist*0.5);
+						intersect_parents(p.parents,p2.parents, mPt.parents);
+						pts->push_back(mPt);
+						merged = false;
 					} else {
 						pts->push_back(p);
+						merged = false;
 					}
 
 				}
+
+
+
+				if(!line->isClosed) {
+					pts->push_back(pts2->back());
+					crvPt mPt = getPt(line,line->length);
+					pts->push_back(mPt);
+				}
+
+				//need to split points
+
 				cout << "pts2 " << pts2->size() << endl;
 				*crv = *pts;
 			}
@@ -974,7 +1049,7 @@ void testApp::draw(){
 	
 	for(int i=0;i<holePts.size();++i) {
 		
-		vector<polyLine*> &crvs = geodesics[i];
+		vector<polyLine*> &crvs = geodesics[i*2];
 
 		for(int j=0;j<crvs.size();j++) {
 			polyLine * pline = crvs[j];
@@ -982,10 +1057,10 @@ void testApp::draw(){
 				ofVec3f p1 = pline->pts[k];
 				//j+=2;
 				ofVec3f p2 = pline->pts[k+1];
-				//ofLine(p1,p2);
+				ofLine(p1,p2);
 			}
 			if(pline->isClosed) {
-				//ofLine(pline->pts[0], pline->pts[pline->pts.size()-1]);
+				ofLine(pline->pts[0], pline->pts[pline->pts.size()-1]);
 			}
 		}
 		/*
@@ -1585,13 +1660,14 @@ void testApp::exportColor() {
 		ofVec3f norm = mesh.getNormal(i);
 		ofVec3f pos = mesh.getVertex(i);
 
-		if(pos.y < 0) {
+
+		if(pos.y < 2) {
 			rimThick = rimT[1];
 			edgeThick = edgeT[1];
 			midBodyThick = midBodyT[1];
 			bodyThick = bodyT[1];
-		} else if(pos.y < 4.58) {
-			float t = pos.y/10;
+		} else if(pos.y < 6) {
+			float t = (6-pos.y)/4;
 			rimThick = ofLerp(rimT[0],rimT[1],t);
 			edgeThick = ofLerp(edgeT[0],edgeT[1],t);
 			midBodyThick = ofLerp(midBodyT[0],midBodyT[1],t);
