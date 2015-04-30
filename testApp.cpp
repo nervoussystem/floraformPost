@@ -30,10 +30,10 @@ float maxThicknessThin = 1.5;//thickness far from the edge
 float centerThicknessThick = centerThicknessThin;
 float maxThicknessThick = maxThicknessThin;
 
-float rimT[2] = {.5,.5};
-float edgeT[2] = {.85,.95};
-float midBodyT[2] = {0.9,1.25};
-float bodyT[2] = {1.0,1.4};
+float rimT[2] = {.5,1.2};
+float edgeT[2] = {.85,2.0};
+float midBodyT[2] = {.9,2.7};
+float bodyT[2] = {1.0,2.7};
 
 float rimThick = rimT[0];
 float edgeThick = edgeT[0];
@@ -41,20 +41,20 @@ float bodyThick = bodyT[0];
 float midBodyThick = midBodyT[0];
 
 float edgeDist = 1.5;
-float midBodyDist = 2.5;
+float midBodyDist = 2;
 
-float minY = 7;
-float maxY = 4.5;
+float minY = 6.6;
+float maxY = 0;
 
-bool limitEdge = false;
+bool limitEdge = true;
 
 bool doHoles = false;
 //cuff ellipse
 //necklace? .887, 30.23
 //hoop 0,3.887
-ofVec2f centerPt(0,3.887);//(-.69,37.66);//-13.78);
-float radX = 13;//67.157;//62.566;//28.1;//35.485;//9.5;
-float radY = 13;//83.66;//98.76;//35.485;//9.5;
+ofVec2f centerPt(0.0,0.0);//(0,3.887);//(-.69,37.66);//-13.78);
+float radX = 8.7;//13;//67.157;//62.566;//28.1;//35.485;//9.5;
+float radY = 8.7;//13;//83.66;//98.76;//35.485;//9.5;
 
 hemesh hmesh;
 vector<float> a;
