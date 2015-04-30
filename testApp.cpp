@@ -11,13 +11,14 @@ float threshold = .45;
 string file = "test.ply";
 bool paused = true;
 
+extern vector<float> distances2;
 
 float maximumDist = 0; //10
 float geodesicSpacing = 1.25;//2
 float holeSpacing = 2.5;//2.5
 
 
-float thickness = 0.9;
+float thickness = 0.92;
 
 float edgeThickness = 0.5;
 
@@ -30,22 +31,30 @@ float centerThicknessThick = centerThicknessThin;
 float maxThicknessThick = maxThicknessThin;
 
 float rimT[2] = {.5,.5};
-float edgeT[2] = {.8,.9};
-float midBodyT[2] = {.85,1.05};
-float bodyT[2] = {.9,1.2};
+float edgeT[2] = {.85,.95};
+float midBodyT[2] = {0.9,1.25};
+float bodyT[2] = {1.0,1.4};
 
 float rimThick = rimT[0];
 float edgeThick = edgeT[0];
 float bodyThick = bodyT[0];
 float midBodyThick = midBodyT[0];
 
-float edgeDist = .75;
-float midBodyDist = 2;
+float edgeDist = 1.5;
+float midBodyDist = 2.5;
 
+float minY = 7;
+float maxY = 4.5;
+
+bool limitEdge = false;
+
+bool doHoles = false;
 //cuff ellipse
-ofVec2f centerPt(0,0);
-float radX = 9.5;
-float radY = 9.5;
+//necklace? .887, 30.23
+//hoop 0,3.887
+ofVec2f centerPt(0,3.887);//(-.69,37.66);//-13.78);
+float radX = 13;//67.157;//62.566;//28.1;//35.485;//9.5;
+float radY = 13;//83.66;//98.76;//35.485;//9.5;
 
 hemesh hmesh;
 vector<float> a;
@@ -100,11 +109,11 @@ void testApp::setup(){
 			float xTerm= pow( (pos.x - centerPt.x) , 2 ) / (radX*radX);
 			float yTerm = pow( (pos.y - centerPt.y) , 2 ) / (radY*radY);
 			v->tag = true;
-			if(xTerm + yTerm <= 1){
-				//v->tag = false;
+			if(limitEdge && xTerm + yTerm <= 1){
+				v->tag = false;
 			} else {
 				v->tag = true;
-				v->tag = false;
+				//v->tag = false;
 			}
 
 		}
@@ -112,6 +121,8 @@ void testApp::setup(){
 	setupSolver(hmesh);
 	distances.resize(hmesh.vertices.size());
 	geodesicDistance(hmesh,distances);
+	distances2.resize(hmesh.vertices.size());
+	geodesicDistance(hmesh,distances2, true);
 	//exportDistObj();
 	maximumDist = 0;
 	for(int i=0;i<distances.size();++i) {
@@ -148,8 +159,10 @@ void testApp::setup(){
 	updateMeshNormals(mesh);
 	
 	//calculate holes
-	getGeodesics();
-	getHolePts();
+	if(doHoles){
+		getGeodesics();
+		getHolePts();
+	}
 	//end calculate holes
 	
 //	saveLines();
@@ -1007,10 +1020,6 @@ void testApp::getGeodesics() {
 //--------------------------------------------------------------
 void testApp::draw(){
 	//exitApp();
-	ofBackground(255);
-	glEnable(GL_DEPTH_TEST);
-	//glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-	//ofEnableLighting();
 	//ofDisableLighting();
 
 	mCam.begin();
@@ -1030,6 +1039,7 @@ void testApp::draw(){
 	//glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 	
 	//glColor4f(1.0,251.0/255.0,0.0,1.0);
+	glEnable(GL_DEPTH_TEST);
 	
 	mesh.enableColors();
 	float frontColor[4] = {44.0/255.0,110.0/255.0,0.0,1.0};
@@ -1038,7 +1048,7 @@ void testApp::draw(){
 	//glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, backColor);
 	for(int i=0;i<hmesh.vertices.size();++i) {
 		//mesh.setColor(i,ofColor(a[i]*255));
-		mesh.setColor(i,ofColor::fromHsb(distances[i]/maximumDist*255,100.0,a[i]*255));
+		mesh.setColor(i,ofColor::fromHsb(distances[i]/maximumDist*255,200.0,a[i]*255));
 	}
 	mesh.draw();
 	ofSetColor(0);
@@ -1048,21 +1058,25 @@ void testApp::draw(){
 	//mesh.drawWireframe();
 	
 	for(int i=0;i<holePts.size();++i) {
+		ofSetColor(255,255,255);
+		ofSetLineWidth(1);
 		
 		vector<polyLine*> &crvs = geodesics[i*2];
-
+		//draw geodesic curves
 		for(int j=0;j<crvs.size();j++) {
 			polyLine * pline = crvs[j];
 			for(int k=0;k<pline->pts.size()-1;++k) {
 				ofVec3f p1 = pline->pts[k];
 				//j+=2;
 				ofVec3f p2 = pline->pts[k+1];
-				ofLine(p1,p2);
+				//ofLine(p1,p2);
 			}
 			if(pline->isClosed) {
-				ofLine(pline->pts[0], pline->pts[pline->pts.size()-1]);
+				//ofLine(pline->pts[0], pline->pts[pline->pts.size()-1]);
 			}
 		}
+		ofSetLineWidth(3);
+		ofSetColor(0);
 		/*
 		vector<crvVec3> &crv = holePts[i];
 		vector<crvVec3> &crv2 = holePts[i+1];
@@ -1605,15 +1619,17 @@ ofColor getColor2(float d) {
 float getThickness(float d) {
 	//return d/maximumDist*.75+.75;
 	//return .75;
-	if(d < edgeDist) {
+	//if(d < edgeDist) {
 		//return cubicInterp(d/2.0,.5, .5, 1, 1.5);
 		//return cubicInterp(d,.55,.55,1,1.5,0,0,3,25); 
-		return cubicInterp(d,.1,rimThick*0.5,edgeThick*0.5,midBodyThick*0.5,-edgeDist,0,edgeDist,midBodyDist);
-	} else if(d < midBodyDist) {
+		//return cubicInterp(d,edgeThick*0.25,edgeThick*0.5,edgeThick*0.5,midBodyThick*0.5,-edgeDist,0,edgeDist,midBodyDist);
+	//} else 
+	if(d < midBodyDist) {
 		//float t = (d-2)/(25.0f-2.0f);
 		//return cubicInterp(t,.5, 1, 1.5, 2);
 		//return cubicInterp(d,.5,1,1.5,2,0,2,25,maximumDist);
-		return cubicInterp(d,rimThick*0.5,edgeThick*0.5,midBodyThick*0.5,bodyThick*0.5,0,edgeDist,midBodyDist,maximumDist);
+		//return cubicInterp(d,edgeThick*0.5,edgeThick*0.5,midBodyThick*0.5,bodyThick*0.5,0,edgeDist,midBodyDist,maximumDist);
+		return cubicInterp(d,edgeThick*0.25,edgeThick*0.5,midBodyThick*0.5,bodyThick*0.5,-edgeDist,0,midBodyDist,maximumDist);
 	} else {
 		//float t = (d-25.0)/(maximumDist-25.0);
 		//return cubicInterp(t,1, 1.5, 2, 2);
@@ -1622,30 +1638,6 @@ float getThickness(float d) {
 		return cubicInterp(d, edgeThick*0.5, midBodyThick*0.5, bodyThick*0.5, bodyThick*0.5, edgeDist, midBodyDist, maximumDist, maximumDist);
 	}
 }
-
-/*
-float getThickness(float d) {
-	//return d/maximumDist*.75+.75;
-	//return .75;
-	if(d < 3) {
-		//return cubicInterp(d/2.0,.5, .5, 1, 1.5);
-		//return cubicInterp(d,.55,.55,1,1.5,0,0,3,25);
-		return cubicInterp(d,.75,.75,.75,1,0,0,3,25);
-		return cubicInterp(d,.25,.25,.75,1,0,0,3,25);
-	} else if(d < 25) {
-		//float t = (d-2)/(25.0f-2.0f);
-		//return cubicInterp(t,.5, 1, 1.5, 2);
-		//return cubicInterp(d,.5,1,1.5,2,0,2,25,maximumDist);
-		return cubicInterp(d,.75,.75,1.,1.5,0,3,25,maximumDist);
-	} else  {
-		//float t = (d-25.0)/(maximumDist-25.0);
-		//return cubicInterp(t,1, 1.5, 2, 2);
-		d = min(d,maximumDist);
-		//return cubicInterp(d,.75,1.5,2.,2., 2, 25,maximumDist,maximumDist);
-		return cubicInterp(d,.75,1.,1.5,1.5, 3, 25,maximumDist,maximumDist);
-	}
-}
-*/
 
 void testApp::exportColor() {
 	ofMesh holeMesh;
@@ -1657,28 +1649,21 @@ void testApp::exportColor() {
 		float d = distances[i];
 		d = max(d,0.0f);
 
+		float d2 = distances2[i];
 		ofVec3f norm = mesh.getNormal(i);
 		ofVec3f pos = mesh.getVertex(i);
 
-
-		if(pos.y < 2) {
-			rimThick = rimT[1];
-			edgeThick = edgeT[1];
-			midBodyThick = midBodyT[1];
-			bodyThick = bodyT[1];
-		} else if(pos.y < 6) {
-			float t = (6-pos.y)/4;
-			rimThick = ofLerp(rimT[0],rimT[1],t);
-			edgeThick = ofLerp(edgeT[0],edgeT[1],t);
-			midBodyThick = ofLerp(midBodyT[0],midBodyT[1],t);
-			bodyThick = ofLerp(bodyT[0],bodyT[1],t);
-		} else {
-			rimThick = rimT[0];
-			edgeThick = edgeT[0];
-			midBodyThick = midBodyT[0];
-			bodyThick = bodyT[0];
-		}
+		//collar -17 - 5
+		float t_d = ofClamp((pos.y-minY)/(maxY-minY),0,1);
+		rimThick = ofLerp(rimT[0], rimT[1], t_d);
+		edgeThick = ofLerp(edgeT[0], edgeT[1], t_d);
+		midBodyThick = ofLerp(midBodyT[0], midBodyT[1], t_d);
+		bodyThick = ofLerp(bodyT[0], bodyT[1], t_d);
 		float normVal = getThickness(d);
+
+		if(d2 < 1.1) {
+			normVal = ofLerp(normVal,rimThick*.5, pow(1-d2/1.1,2));
+		}
 		hmesh.vertices[i]->index = holeMesh.getNumVertices();
 		//normVal = .75*normVal+.75;
 		//if(d <= .0001) {
@@ -1709,11 +1694,11 @@ void testApp::exportColor() {
 		hevertex * v2 = hmesh.vertices[i2];
 		hevertex * v3 = hmesh.vertices[i3];
 		i1 = v1->index;
-		i2 = v2->index;
-		i3 = v3->index;
+		i2 = v3->index;
+		i3 = v2->index;
 		bool b1 = v1->boundary;
-		bool b2 = v2->boundary;
-		bool b3 = v3->boundary;
+		bool b2 = v3->boundary;
+		bool b3 = v2->boundary;
 
 		int bi1 = i1+2;
 		int bi2 = i2+2;

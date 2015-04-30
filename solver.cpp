@@ -15,6 +15,7 @@ static vector< Eigen::Triplet<double> > triplets;
 float maxEdgeLength;
 float maxEdgeLengthSq;
 vector<float> distances;
+vector<float> distances2;
 
 
 void setupSolver(hemesh & hmesh) {
@@ -94,7 +95,7 @@ void setDistanceBoundary(hemesh & hmesh, Vectord & u, bool tag) {
 	}
 	*/
 	for(auto v : hmesh.vertices) {
-		if(tag || v->tag) {
+		if((tag && v->boundary) || v->tag) {
 			u[v->index] = 1.0;
 		}
 	}
