@@ -44,7 +44,7 @@ float edgeDist = 1.5;
 float midBodyDist = 2;
 
 float minY = 6.6;
-float maxY = 0;
+float maxY = 2.6;
 
 bool limitEdge = true;
 
@@ -53,8 +53,8 @@ bool doHoles = false;
 //necklace? .887, 30.23
 //hoop 0,3.887
 ofVec2f centerPt(0.0,0.0);//(0,3.887);//(-.69,37.66);//-13.78);
-float radX = 8.7;//13;//67.157;//62.566;//28.1;//35.485;//9.5;
-float radY = 8.7;//13;//83.66;//98.76;//35.485;//9.5;
+float radX = 8.6;//9.5;//13;//67.157;//62.566;//28.1;//35.485;//9.5;
+float radY = 8.6;//9.5;//13;//83.66;//98.76;//35.485;//9.5;
 
 hemesh hmesh;
 vector<float> a;
