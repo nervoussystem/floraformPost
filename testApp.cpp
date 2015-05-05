@@ -18,7 +18,7 @@ float geodesicSpacing = 1.25;//2
 float holeSpacing = 2.5;//2.5
 
 
-float thickness = 0.92;
+float thickness = 0.32;//0.92;
 
 float edgeThickness = 0.5;
 
@@ -30,10 +30,14 @@ float maxThicknessThin = 1.5;//thickness far from the edge
 float centerThicknessThick = centerThicknessThin;
 float maxThicknessThick = maxThicknessThin;
 
-float rimT[2] = {.5,1.2};
-float edgeT[2] = {.85,2.0};
-float midBodyT[2] = {.9,2.7};
-float bodyT[2] = {1.0,2.7};
+float rimT[2] = {.5,.7};
+float edgeT[2] = {.85,1.1};
+float midBodyT[2] = {1.0,2.0};
+float bodyT[2] = {1.8,2.1};
+float midBodyDist = 8;
+
+float minY = 0;
+float maxY = 15;
 
 float rimThick = rimT[0];
 float edgeThick = edgeT[0];
@@ -41,10 +45,6 @@ float bodyThick = bodyT[0];
 float midBodyThick = midBodyT[0];
 
 float edgeDist = 1.5;
-float midBodyDist = 2;
-
-float minY = 6.6;
-float maxY = 2.6;
 
 bool limitEdge = true;
 
@@ -52,9 +52,9 @@ bool doHoles = false;
 //cuff ellipse
 //necklace? .887, 30.23
 //hoop 0,3.887
-ofVec2f centerPt(0.0,0.0);//(0,3.887);//(-.69,37.66);//-13.78);
-float radX = 8.6;//9.5;//13;//67.157;//62.566;//28.1;//35.485;//9.5;
-float radY = 8.6;//9.5;//13;//83.66;//98.76;//35.485;//9.5;
+ofVec2f centerPt(0,29.29);//centerPt(-0.42,-17.123);//(0,3.887);//(-.69,37.66);//-13.78);
+float radX = 67.157;//8.6;//9.5;//13;//62.566;//28.1;//35.485;//9.5;
+float radY = 83.66;//8.6;//9.5;//13;//98.76;//35.485;//9.5;
 
 hemesh hmesh;
 vector<float> a;
@@ -129,6 +129,7 @@ void testApp::setup(){
 		maximumDist  = max(maximumDist, distances[i]);
 	}
 	cout << "max dist " << maximumDist << endl;
+	maximumDist = 40;
 	//adaptiveSubdivision();
 	setupSolver(hmesh);
 	//computeSecondNeighbors();
@@ -443,6 +444,7 @@ void testApp::getHolePts() {
 	for(int i=1;i<geodesics.size()-1;i+=2) {
 		vector<polyLine *> &crvs = geodesics[i];
 		vector<polyLine *> &crvs2 = geodesics[i+1];
+		cout << "num crvs " << crvs.size() << " " << crvs2.size() << endl;
 		if(crvs2.size() == 0) break;
 		vector<crvPt> * pts2 = new vector<crvPt>();
 		vector<crvPt> * pts = new vector<crvPt>();
@@ -928,7 +930,7 @@ void testApp::getGeodesics() {
 	float dist = geodesicSpacing;
 	float halfDistSq = dist*dist/16;
 	float bDistSq = 6*6;
-	for(int k=0;k<40;++k) {
+	for(int k=0;k<80;++k) {
 		vector<polyLine *> lines;
 		crv.clear();
 		dist = (k+.1)*geodesicSpacing;
@@ -1659,10 +1661,18 @@ void testApp::exportColor() {
 		edgeThick = ofLerp(edgeT[0], edgeT[1], t_d);
 		midBodyThick = ofLerp(midBodyT[0], midBodyT[1], t_d);
 		bodyThick = ofLerp(bodyT[0], bodyT[1], t_d);
-		float normVal = getThickness(d);
+		float normVal = rimThick;
+		if(d < midBodyDist) {
+			normVal = getThickness(d);
+		} else {
+			float totalD = (d-midBodyDist)+d2;
+			float dt = (d-midBodyDist)/totalD*(maximumDist-midBodyDist)+midBodyDist;
+			normVal = getThickness(dt);
+		}
 
-		if(d2 < 1.1) {
-			normVal = ofLerp(normVal,rimThick*.5, pow(1-d2/1.1,2));
+		d2 = min(d,d2);
+		if(d2 < edgeDist) {
+			normVal = ofLerp(normVal,rimThick*.5, pow(1-d2/edgeDist,2));
 		}
 		hmesh.vertices[i]->index = holeMesh.getNumVertices();
 		//normVal = .75*normVal+.75;
