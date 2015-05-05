@@ -95,7 +95,7 @@ void setDistanceBoundary(hemesh & hmesh, Vectord & u, bool tag) {
 	}
 	*/
 	for(auto v : hmesh.vertices) {
-		if((tag && v->boundary) || v->tag) {
+		if((tag && v->boundary && !v->tag) || v->tag) {
 			u[v->index] = 1.0;
 		}
 	}
