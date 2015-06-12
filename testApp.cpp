@@ -8,7 +8,7 @@ float F = 0.029;//.03
 float k = 0.06;//.063
 float offset = 3.0;//.5;
 float threshold = .45;
-string file = "test.ply";
+string file = "spherex312003.ply";
 bool paused = true;
 
 extern vector<float> distances2;
@@ -17,8 +17,10 @@ float maximumDist = 0; //10
 float geodesicSpacing = 1.25;//2
 float holeSpacing = 2.5;//2.5
 
+float colorDist = 30;
+float fallOff = 5;
 
-float thickness = 0.92;
+float thickness = 1.3;
 
 float edgeThickness = 0.5;
 
@@ -30,10 +32,11 @@ float maxThicknessThin = 1.5;//thickness far from the edge
 float centerThicknessThick = centerThicknessThin;
 float maxThicknessThick = maxThicknessThin;
 
-float rimT[2] = {.5,1.2};
-float edgeT[2] = {.85,2.0};
-float midBodyT[2] = {.9,2.7};
-float bodyT[2] = {1.0,2.7};
+float rimT[2] = {.5,.5};
+float edgeT[2] = {.85,.95};
+float midBodyT[2] = {0.9,1.25};
+float bodyT[2] = {1.0,1.4};
+float midBodyDist = 2.5;
 
 float rimThick = rimT[0];
 float edgeThick = edgeT[0];
@@ -41,14 +44,13 @@ float bodyThick = bodyT[0];
 float midBodyThick = midBodyT[0];
 
 float edgeDist = 1.5;
-float midBodyDist = 2;
 
-float minY = 6.6;
-float maxY = 2.6;
+float minY = 7;
+float maxY = 4.5;
 
-bool limitEdge = true;
+bool limitEdge = false;
 
-bool doHoles = false;
+bool doHoles = true;
 //cuff ellipse
 //necklace? .887, 30.23
 //hoop 0,3.887
@@ -95,9 +97,13 @@ bool isMovie = false;
 
 void saveLines();
 
+bool processing = false;
+int fileIndex = 0;
+vector<ofFile> files;
+
 //--------------------------------------------------------------
 void testApp::setup(){
-	loadSettings();
+	//loadSettings();
 	loadMesh(file);
 	hmesh = hemeshFromOfMesh(mesh);
 
@@ -105,24 +111,23 @@ void testApp::setup(){
 		hevertex * v = hmesh.vertices[i];
 		if(v->boundary) {
 
-			ofVec3f pos = mesh.getVertex(i);
-			float xTerm= pow( (pos.x - centerPt.x) , 2 ) / (radX*radX);
-			float yTerm = pow( (pos.y - centerPt.y) , 2 ) / (radY*radY);
-			v->tag = true;
-			if(limitEdge && xTerm + yTerm <= 1){
-				v->tag = false;
-			} else {
+			//ofVec3f pos = mesh.getVertex(i);
+			//float xTerm= pow( (pos.x - centerPt.x) , 2 ) / (radX*radX);
+			//float yTerm = pow( (pos.y - centerPt.y) , 2 ) / (radY*radY);
+			//v->tag = true;
+			//if(limitEdge && xTerm + yTerm <= 1){
+			//	v->tag = false;
+			//} else {
 				v->tag = true;
 				//v->tag = false;
-			}
-
+			//}
 		}
 	}
 	setupSolver(hmesh);
 	distances.resize(hmesh.vertices.size());
 	geodesicDistance(hmesh,distances);
-	distances2.resize(hmesh.vertices.size());
-	geodesicDistance(hmesh,distances2, true);
+	//distances2.resize(hmesh.vertices.size());
+	//geodesicDistance(hmesh,distances2, true);
 	//exportDistObj();
 	maximumDist = 0;
 	for(int i=0;i<distances.size();++i) {
@@ -130,17 +135,17 @@ void testApp::setup(){
 	}
 	cout << "max dist " << maximumDist << endl;
 	//adaptiveSubdivision();
-	setupSolver(hmesh);
+	//setupSolver(hmesh);
 	//computeSecondNeighbors();
-	a.resize(hmesh.vertices.size());
-	b.resize(hmesh.vertices.size());
+	//a.resize(hmesh.vertices.size());
+	//b.resize(hmesh.vertices.size());
 	//distances.resize(hmesh.vertices.size());
 	//geodesicDistance(hmesh,distances);
-	assembleMatrix();
+	//assembleMatrix();
 	
 	//float maxDist = computeDistance(mesh,edges,distances);
 	//initializeFMM(mesh,edges);
-	initValues();
+	//initValues();
 	//computeDistance(mesh,edges,distances);
 	//enable color
 
@@ -159,10 +164,13 @@ void testApp::setup(){
 	updateMeshNormals(mesh);
 	
 	//calculate holes
-	if(doHoles){
-		getGeodesics();
-		getHolePts();
-	}
+	//if(doHoles){
+	//	getGeodesics();
+	//	getHolePts();
+	//}
+
+	markGrowthPts();
+	fixColors();
 	//end calculate holes
 	
 //	saveLines();
@@ -172,6 +180,98 @@ void testApp::setup(){
 //	exportColor();
 //	updateSolver(dt);
 //	geodesicDistance(distances);
+}
+
+void testApp::markGrowthPts() {
+	//check for isolated white spots
+	for(int i=0;i<hmesh.vertices.size();++i) {
+		ofColor c = mesh.getColor(i);
+		float dist = distances[i];
+		hevertex * v = hmesh.vertices[i];
+		if(c == ofColor::white) {
+			bool isSub = true;
+			if(dist > maximumDist*0.56) {
+				//check neighbors
+				hedge * e = v->edge;
+				hedge * start = e;
+				ofVec3f newColor;
+				int neighs = 0;
+				do {
+					e = e->next;
+					int index = e->vertex->index;
+					ofColor c2 = mesh.getColor(index);
+					if(c2 == ofColor::white) {
+						isSub = false;
+					}
+					newColor += ofVec3f(c2.r,c2.g,c2.b);
+					neighs++;
+					e = e->pair;
+				} while(e != start);
+				if(isSub) {
+					newColor /= neighs;
+					mesh.setColor(i,ofColor(newColor.x,newColor.y,newColor.z));
+				} else {
+					mesh.setColor(i,ofColor::red);
+				}
+			}
+		}
+
+	}
+	for(int i=0;i<hmesh.vertices.size();++i) {
+		ofColor c = mesh.getColor(i);
+		float dist = distances[i];
+		hevertex * v = hmesh.vertices[i];
+		v->tag = false;
+
+		if(dist > maximumDist*0.56) {
+			if(c == ofColor::red) {
+				v->tag = true;
+			}
+		}
+	}
+	geodesicDistance(hmesh,distances);
+
+}
+
+void testApp::process() {
+	hmesh = hemeshFromOfMesh(mesh);
+
+	for(int i=0;i<hmesh.vertices.size();++i) {
+		hevertex * v = hmesh.vertices[i];
+		if(v->boundary) {
+
+			//ofVec3f pos = mesh.getVertex(i);
+			//float xTerm= pow( (pos.x - centerPt.x) , 2 ) / (radX*radX);
+			//float yTerm = pow( (pos.y - centerPt.y) , 2 ) / (radY*radY);
+			//v->tag = true;
+			//if(limitEdge && xTerm + yTerm <= 1){
+			//	v->tag = false;
+			//} else {
+				v->tag = true;
+				//v->tag = false;
+			//}
+		}
+	}
+	setupSolver(hmesh);
+	distances.resize(hmesh.vertices.size());
+	geodesicDistance(hmesh,distances);
+	//distances2.resize(hmesh.vertices.size());
+	//geodesicDistance(hmesh,distances2, true);
+	//exportDistObj();
+	maximumDist = 0;
+	for(int i=0;i<distances.size();++i) {
+		maximumDist  = max(maximumDist, distances[i]);
+	}
+	markGrowthPts();
+	fixColors();
+}
+
+void testApp::fixColors() {
+	for(int i=0;i<hmesh.vertices.size();++i) {
+		float t = ofClamp(1.0-distances[i]/colorDist,0,1);
+		t = pow(t,fallOff);
+		mesh.setColor(i,ofColor(255,255-t*255.0,255- t*255.0));
+	}
 }
 
 float crvLen(vector<crvVec3> & crv) {
@@ -600,8 +700,6 @@ void getHolePts2() {
 	}
 }
 
-
-
 void testApp::optimizePts() {
 	/*
 	crvVec3 pt;
@@ -749,6 +847,17 @@ void updateMeshNormals(ofVboMesh &mesh) {
 }
 //--------------------------------------------------------------
 void testApp::update() {
+	if(processing) {
+		if(fileIndex >= files.size()) {
+			processing = false;
+		} else {
+			mesh.load(files[fileIndex].getAbsolutePath());
+			cout << files[fileIndex].getAbsolutePath() << endl;
+			process();
+			mesh.save(files[fileIndex].getAbsolutePath());
+			fileIndex++;
+		}
+	}
 	if(!paused) {
 		updateSolver(dt);
 		cout << "cats" << endl;
@@ -928,7 +1037,7 @@ void testApp::getGeodesics() {
 	float dist = geodesicSpacing;
 	float halfDistSq = dist*dist/16;
 	float bDistSq = 6*6;
-	for(int k=0;k<40;++k) {
+	for(int k=0;k<80;++k) {
 		vector<polyLine *> lines;
 		crv.clear();
 		dist = (k+.1)*geodesicSpacing;
@@ -1046,150 +1155,11 @@ void testApp::draw(){
 	//glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, frontColor);
 	float backColor[4] = {1.0,251.0/255.0,0.0,1.0};
 	//glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, backColor);
-	for(int i=0;i<hmesh.vertices.size();++i) {
+	//for(int i=0;i<hmesh.vertices.size();++i) {
 		//mesh.setColor(i,ofColor(a[i]*255));
-		mesh.setColor(i,ofColor::fromHsb(distances[i]/maximumDist*255,200.0,a[i]*255));
-	}
+	//	mesh.setColor(i,ofColor::fromHsb(distances[i]/maximumDist*255,200.0,a[i]*255));
+	//}
 	mesh.draw();
-	ofSetColor(0);
-	mesh.disableColors();
-
-	glDisable(GL_DEPTH_TEST);
-	//mesh.drawWireframe();
-	
-	for(int i=0;i<holePts.size();++i) {
-		ofSetColor(255,255,255);
-		ofSetLineWidth(1);
-		
-		vector<polyLine*> &crvs = geodesics[i*2];
-		//draw geodesic curves
-		for(int j=0;j<crvs.size();j++) {
-			polyLine * pline = crvs[j];
-			for(int k=0;k<pline->pts.size()-1;++k) {
-				ofVec3f p1 = pline->pts[k];
-				//j+=2;
-				ofVec3f p2 = pline->pts[k+1];
-				//ofLine(p1,p2);
-			}
-			if(pline->isClosed) {
-				//ofLine(pline->pts[0], pline->pts[pline->pts.size()-1]);
-			}
-		}
-		ofSetLineWidth(3);
-		ofSetColor(0);
-		/*
-		vector<crvVec3> &crv = holePts[i];
-		vector<crvVec3> &crv2 = holePts[i+1];
-
-		vector<crvVec3> &geo1 = geodesics[i];
-		float crv1Len = geo1[geo1.size()-1].t;
-		vector<crvVec3> &geo2 = geodesics[i+1];
-		float crv2Len = geo2[geo2.size()-1].t;
-		
-		vector<crvVec3> projPts;
-		for(int j=0;j<crv.size();++j) {
-			projPts.push_back(projectPt(crv[j],geo2));
-		}
-
-		for(int j=0;j<crv2.size();j++) {
-			crvVec3 p1 = crv2[j];
-			
-			//j+=2;
-			//ofVec3f p2 = crv[j%crv.size()];
-			
-			crvVec3 closestL, closestR;
-			float minL = -99999;
-			float minR = 999999;
-			for(int k=0;k<projPts.size();++k) {
-				float d = crvDistance(p1,projPts[k], crv2Len);
-				if(d < 0) {
-					if(d > minL) {
-						minL = d;
-						closestL = crv[k];
-					}
-				} else {
-					if(d < minR) {
-						minR = d;
-						closestR = crv[k];
-					}
-				}
-			}
-			ofLine(p1,closestL);
-			ofLine(p1,closestR);
-			
-			
-			//for(int k=0;k<crv2.size();++k) {
-			//	ofVec3f p2 = crv2[k];
-			//	//if(p1.distanceSquared(projPts[k]) < 4) {
-			//	if(abs(crvDistance(projPts[k], p1,crv1Len)) < 2.0f) {
-			//		ofLine(p1,p2);
-			//	}
-			}
-			
-		}
-		*/
-		for(auto crv : *holePts[i]) {
-
-			//vector<crvPt> &crv = holePts[i];
-			//vector<crvPt> &crv2 = holePts[i+1];
-
-			for(int j=0;j<crv->size();++j) {
-				crvPt p1 = crv->at(j);
-				for(auto p2 : p1.parents) {
-					ofLine(p1,*p2);
-				}
-			}
-		}
-		/*
-		vector<crvPt> projPts;
-		for(int j=0;j<crv2.size();++j) {
-			projPts.push_back(projectPt(crv2[j],crvs));
-		}
-
-		for(int j=0;j<crv.size();++j) {
-			crvPt p1 = crv[j];
-			for(int k=0;k<crv2.size();++k) {
-				crvPt p2 = projPts[k];
-				if(p1.crv == p2.crv) {
-					if(abs(crvDistance(projPts[k], p1)) < holeSpacing) {
-						ofLine(p1,crv2[k]);
-					}
-				}
-				//if(p1.distanceSquared(p2) < holeSpacing*holeSpacing*.25+geodesicSpacing*geodesicSpacing) {
-				//if(abs(crvDistance(projPts[k], p1,crv1Len)) < 2.0f) {
-				//	ofLine(p1,p2);
-				//}
-			}
-		}
-		*/
-	}
-	//mesh.disableColors();
-
-	//draw normal lines
-	/*
-	for(int i=0;i<hmesh.faces.size();++i) {
-		heface * f= hmesh.faces[i];
-		hedge *e = f->edge;
-		hedge * start = e;
-		ofVec3f center;
-		do {
-			center += mesh.getVertex(e->vertex->index);
-			e = e->next;
-		} while(e != start);
-		center /= 3;
-
-		ofLine(center, center + f->norm);
-	}
-	*/
-	mesh.enableColors();
-	//ofSetColor(255,0,0);
-	//glDisable(GL_DEPTH_TEST);
-	//mesh.getVbo().drawElements(GL_TRIANGLES, 3);
-	//mCam.end();
-
-	if(isMovie && !paused && stepCount % 10 == 0) {
-		ofSaveFrame();
-	}
 }
 
 void saveLines() {
@@ -1750,6 +1720,18 @@ void testApp::loadMesh(string path) {
 	}
 	//edges
 	//getMaxEdgeLength();
+}
+
+void testApp::dragged(ofDragInfo & info) {
+	if(!processing) {
+		processing = true;
+		ofDirectory dir;
+		dir = ofDirectory(info.files[0]);
+		dir.allowExt("ply");
+		dir.listDir();
+		files = dir.getFiles();
+		fileIndex = 0;
+	}
 }
 
 //--------------------------------------------------------------

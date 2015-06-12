@@ -22,6 +22,7 @@ class testApp : public ofBaseApp{
 		void mouseReleased(int x, int y, int button);
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
+		void dragged(ofDragInfo & info);
 		void gotMessage(ofMessage msg);
 		void exit();
 
@@ -42,6 +43,10 @@ class testApp : public ofBaseApp{
 		void getGeodesics();
 		void getHolePts();
 		void optimizePts();
+
+		void markGrowthPts();
+		void fixColors();
+		void process();
 };
 
 void updateMeshNormals(ofVboMesh &mesh);
