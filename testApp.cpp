@@ -33,10 +33,10 @@ float centerThicknessThick = centerThicknessThin;
 float maxThicknessThick = maxThicknessThin;
 
 float rimT[2] = {.5,.5};
-float edgeT[2] = {.85,.95};
-float midBodyT[2] = {0.9,1.25};
-float bodyT[2] = {1.0,1.4};
-float midBodyDist = 2.5;
+float edgeT[2] = {.8,.9};
+float midBodyT[2] = {.9,1.7};
+float bodyT[2] = {1.5,1.8};
+float midBodyDist = 6;
 
 float rimThick = rimT[0];
 float edgeThick = edgeT[0];
@@ -45,18 +45,18 @@ float midBodyThick = midBodyT[0];
 
 float edgeDist = 1.5;
 
-float minY = 7;
-float maxY = 4.5;
+float minY = 10;
+float maxY = 0;
 
-bool limitEdge = false;
+bool limitEdge = true;
 
-bool doHoles = true;
+bool doHoles = false;
 //cuff ellipse
 //necklace? .887, 30.23
 //hoop 0,3.887
 ofVec2f centerPt(0.0,0.0);//(0,3.887);//(-.69,37.66);//-13.78);
-float radX = 8.6;//9.5;//13;//67.157;//62.566;//28.1;//35.485;//9.5;
-float radY = 8.6;//9.5;//13;//83.66;//98.76;//35.485;//9.5;
+float radX = 32;//8.6;//9.5;//13;//67.157;//62.566;//28.1;//35.485;//9.5;
+float radY = 24.5;//8.6;//9.5;//13;//83.66;//98.76;//35.485;//9.5;
 
 hemesh hmesh;
 vector<float> a;
@@ -103,7 +103,7 @@ vector<ofFile> files;
 
 //--------------------------------------------------------------
 void testApp::setup(){
-	//loadSettings();
+	loadSettings();
 	loadMesh(file);
 	hmesh = hemeshFromOfMesh(mesh);
 
@@ -111,23 +111,22 @@ void testApp::setup(){
 		hevertex * v = hmesh.vertices[i];
 		if(v->boundary) {
 
-			//ofVec3f pos = mesh.getVertex(i);
-			//float xTerm= pow( (pos.x - centerPt.x) , 2 ) / (radX*radX);
-			//float yTerm = pow( (pos.y - centerPt.y) , 2 ) / (radY*radY);
-			//v->tag = true;
-			//if(limitEdge && xTerm + yTerm <= 1){
-			//	v->tag = false;
-			//} else {
+			ofVec3f pos = mesh.getVertex(i);
+			float xTerm= pow( (pos.x - centerPt.x) , 2 ) / (radX*radX);
+			float yTerm = pow( (pos.y - centerPt.y) , 2 ) / (radY*radY);
+			v->tag = true;
+			if(limitEdge && xTerm + yTerm <= 1){
+				v->tag = false;
+			} else {
 				v->tag = true;
-				//v->tag = false;
-			//}
+			}
 		}
 	}
 	setupSolver(hmesh);
 	distances.resize(hmesh.vertices.size());
 	geodesicDistance(hmesh,distances);
-	//distances2.resize(hmesh.vertices.size());
-	//geodesicDistance(hmesh,distances2, true);
+	distances2.resize(hmesh.vertices.size());
+	geodesicDistance(hmesh,distances2, true);
 	//exportDistObj();
 	maximumDist = 0;
 	for(int i=0;i<distances.size();++i) {
@@ -164,13 +163,13 @@ void testApp::setup(){
 	updateMeshNormals(mesh);
 	
 	//calculate holes
-	//if(doHoles){
-	//	getGeodesics();
-	//	getHolePts();
-	//}
+	if(doHoles){
+		getGeodesics();
+		getHolePts();
+	}
 
-	markGrowthPts();
-	fixColors();
+	//markGrowthPts();
+	//fixColors();
 	//end calculate holes
 	
 //	saveLines();
@@ -853,14 +852,10 @@ void testApp::update() {
 		} else {
 			mesh.load(files[fileIndex].getAbsolutePath());
 			cout << files[fileIndex].getAbsolutePath() << endl;
-			process();
+			//process();
 			mesh.save(files[fileIndex].getAbsolutePath());
 			fileIndex++;
 		}
-	}
-	if(!paused) {
-		updateSolver(dt);
-		cout << "cats" << endl;
 	}
 }
 
@@ -1151,14 +1146,15 @@ void testApp::draw(){
 	glEnable(GL_DEPTH_TEST);
 	
 	mesh.enableColors();
-	float frontColor[4] = {44.0/255.0,110.0/255.0,0.0,1.0};
+	//float frontColor[4] = {44.0/255.0,110.0/255.0,0.0,1.0};
 	//glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, frontColor);
-	float backColor[4] = {1.0,251.0/255.0,0.0,1.0};
+	//float backColor[4] = {1.0,251.0/255.0,0.0,1.0};
 	//glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, backColor);
-	//for(int i=0;i<hmesh.vertices.size();++i) {
+	for(int i=0;i<hmesh.vertices.size();++i) {
 		//mesh.setColor(i,ofColor(a[i]*255));
-	//	mesh.setColor(i,ofColor::fromHsb(distances[i]/maximumDist*255,200.0,a[i]*255));
-	//}
+		//mesh.setColor(i,ofColor::fromHsb(distances[i]/maximumDist*255,200.0,a[i]*255));
+		mesh.setColor(i,ofColor::fromHsb(distances[i]/maximumDist*255,200.0,255));
+	}
 	mesh.draw();
 }
 
