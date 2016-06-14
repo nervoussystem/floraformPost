@@ -8,7 +8,8 @@ float F = 0.029;//.03
 float k = 0.06;//.063
 float offset = 3.0;//.5;
 float threshold = .45;
-string file = "spherex312003.ply";
+//it doesn't use this, it uses the settings.xml file
+string file = "justinCouch_ring.ply";
 bool paused = true;
 
 extern vector<float> distances2;
@@ -31,24 +32,36 @@ float centerThicknessThin = 0.8;//thickness close to the edge
 float maxThicknessThin = 1.5;//thickness far from the edge
 float centerThicknessThick = centerThicknessThin;
 float maxThicknessThick = maxThicknessThin;
-
+/*
 float rimT[2] = {.5,.5};
-float edgeT[2] = {.8,.9};
-float midBodyT[2] = {.9,1.7};
-float bodyT[2] = {1.5,1.8};
-float midBodyDist = 6;
+float edgeT[2] = {.85,.95};
+float midBodyT[2] = {0.9,1.7};
+float bodyT[2] = {1.0,1.8};
+float midBodyDist = 2.5;
+float edgeDist = 1.5;
+float maxY = 4.5;
+float minY = 7;
+*/
+//florescene engagement ring settings
+float rimT[2] = { .5,1.2 };
+float edgeT[2] = { .75,1.5 };
+float midBodyT[2] = { .8,2. };
+float bodyT[2] = { .8,2. };
+float midBodyDist = 2;
+float edgeDist = .7;
+float minY = 5;
+float maxY = 0;
 
 float rimThick = rimT[0];
 float edgeThick = edgeT[0];
 float bodyThick = bodyT[0];
 float midBodyThick = midBodyT[0];
 
-float edgeDist = 1.5;
 
-float minY = 10;
-float maxY = 0;
 
-bool limitEdge = true;
+
+
+bool limitEdge = false;
 
 bool doHoles = false;
 //cuff ellipse
