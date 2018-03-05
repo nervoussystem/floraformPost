@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ofxXmlSettings.h"
+//#include "ofxXmlSettings.h"
 #include "solver.h"
 #include "Hemesh.h"
 #include "DiscreteExteriorCalculus.h"
@@ -25,7 +25,7 @@ class testApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 		void exit();
 
-		ofxXmlSettings settings;
+		//ofxXmlSettings settings;
 		void loadSettings();
 		ofEasyCam mCam;
 		hemesh hmesh;

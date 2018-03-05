@@ -8,7 +8,7 @@ float F = 0.029;//.03
 float k = 0.06;//.063
 float offset = 3.0;//.5;
 float threshold = .45;
-string file = "test.ply";
+string file = "jessica_minimal_drop_3.8_5400774.obj";
 bool paused = true;
 
 //hole stuff
@@ -22,7 +22,7 @@ float rimT[2] = {.5,.5};
 float edgeT[2] = {.75,.75};
 float midBodyT[2] = {.9,1.5};
 float bodyT[2] = {1.2,2};
-float edgeDist = .75;
+float edgeDist = 1.75;// .75;
 float midBodyDist = 4;
 
 float rimThick = rimT[0];
@@ -81,8 +81,10 @@ void saveLines();
 void testApp::setup(){
 	loadSettings();
 	loadMesh(file);
+	mesh.smoothNormals(0);
+	mesh.enableColors();
+	while (mesh.getNumColors() < mesh.getNumVertices()) mesh.addColor(ofColor());
 	hmesh = hemeshFromOfMesh(mesh);
-
 	for(int i=0;i<hmesh.vertices.size();++i) {
 		hevertex * v = hmesh.vertices[i];
 		if(v->boundary) {
@@ -580,6 +582,7 @@ void testApp::exportDistObj() {
 }
 
 void testApp::loadSettings() {
+	/*
 	settings.load("settings.xml");
 	dt = settings.getValue("dt",dt);
 	diffusionRateA = settings.getValue("diffusionRateA",diffusionRateA);
@@ -593,6 +596,7 @@ void testApp::loadSettings() {
 	holeSpacing = settings.getValue("holeSpacing",holeSpacing);
 	doBorder = settings.getValue("doBorder",1)==1;
 	cout << doBorder << endl;
+	*/
 }
 
 void testApp::exit() {
@@ -1518,8 +1522,15 @@ ofColor getColor2(float d) {
 	return cubicInterpColor(d,colors2[i0],colors2[i1],colors2[i2],colors2[i3],colorD2[i0],colorD2[i1],colorD2[i2],colorD2[i3]);
 }
 
-float getThickness(float d) {
+float getThickness(ofVec3f pos, float d) {
 	//return d/maximumDist*.75+.75;
+	//float t = ofClamp((pos.distance(ofVec3f(71.343, -31, 0))-5) / 30,0,1);
+	//return ofLerp(.75,.5,t);
+	
+	if (d < edgeDist) {
+		return cubicInterp(d, .2, .2, .6, .6, 0, 0, edgeDist, edgeDist * 2);
+	}
+	return .6;
 	//return .75;
 	if(d < edgeDist) {
 		//return cubicInterp(d/2.0,.5, .5, 1, 1.5);
@@ -1596,7 +1607,7 @@ void testApp::exportColor() {
 			midBodyThick = midBodyT[1];
 			bodyThick = bodyT[1];
 		}
-		float normVal = getThickness(d);
+		float normVal = getThickness(pos,d);
 		hmesh.vertices[i]->index = holeMesh.getNumVertices();
 		//normVal = .75*normVal+.75;
 		//if(d <= .0001) {
@@ -1674,7 +1685,7 @@ void testApp::exportColor() {
 
 void testApp::loadMesh(string path) {
 	mesh.load(path);
-	mesh.indices.reserve(mesh.getNumIndices()*20);
+	//mesh.indices.reserve(mesh.getNumIndices()*20);
 	//perturb
 	for(int i=0;i<mesh.getNumVertices();++i) {
 		ofVec3f pt = mesh.getVertex(i);
