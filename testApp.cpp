@@ -9,7 +9,7 @@ float k = 0.06;//.063
 float offset = 3.0;//.5;
 float threshold = .45;
 //it doesn't use this, it uses the settings.xml file
-string file = "justinCouch_ring.ply";
+string file = "ringAdjust3_doneJesseEdit.obj";
 bool paused = true;
 
 extern vector<float> distances2;
@@ -68,8 +68,8 @@ bool doHoles = false;
 //necklace? .887, 30.23
 //hoop 0,3.887
 ofVec2f centerPt(0.0,0.0);//(0,3.887);//(-.69,37.66);//-13.78);
-float radX = 32;//8.6;//9.5;//13;//67.157;//62.566;//28.1;//35.485;//9.5;
-float radY = 24.5;//8.6;//9.5;//13;//83.66;//98.76;//35.485;//9.5;
+float radX = 9.186;// 32;//8.6;//9.5;//13;//67.157;//62.566;//28.1;//35.485;//9.5;
+float radY = 9.186;// 24.5;//8.6;//9.5;//13;//83.66;//98.76;//35.485;//9.5;
 
 hemesh hmesh;
 vector<float> a;
@@ -135,11 +135,14 @@ void testApp::setup(){
 			}
 		}
 	}
+	cout << "loaded" << endl;
 	setupSolver(hmesh);
+	cout << "solver setup" << endl;
 	distances.resize(hmesh.vertices.size());
 	geodesicDistance(hmesh,distances);
 	distances2.resize(hmesh.vertices.size());
 	geodesicDistance(hmesh,distances2, true);
+	cout << "distance calculated" << endl;
 	//exportDistObj();
 	maximumDist = 0;
 	for(int i=0;i<distances.size();++i) {
@@ -173,6 +176,7 @@ void testApp::setup(){
 	mCam.setupPerspective(true,60.0,0.001,1000.0);
 	mCam.setTarget((minPt+maxPt)*0.5);
 	mCam.setDistance(3.0*max(max(maxPt.x-minPt.x,maxPt.y-minPt.y),maxPt.z-minPt.z));
+	cout << "normals" << endl;
 	updateMeshNormals(mesh);
 	
 	//calculate holes
@@ -180,7 +184,7 @@ void testApp::setup(){
 		getGeodesics();
 		getHolePts();
 	}
-
+	cout << "setup done" << endl;
 	//markGrowthPts();
 	//fixColors();
 	//end calculate holes
@@ -1720,7 +1724,7 @@ void testApp::exportColor() {
 
 void testApp::loadMesh(string path) {
 	mesh.load(path);
-	mesh.indices.reserve(mesh.getNumIndices()*20);
+	//mesh.indices.reserve(mesh.getNumIndices()*20);
 	//perturb
 	for(int i=0;i<mesh.getNumVertices();++i) {
 		ofVec3f pt = mesh.getVertex(i);
