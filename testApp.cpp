@@ -9,7 +9,7 @@ float k = 0.06;//.063
 float offset = 3.0;//.5;
 float threshold = .45;
 //it doesn't use this, it uses the settings.xml file
-string file = "ringAdjust3_doneJesseEdit.obj";
+string file = "doubleJellyCuff3L_scaled.ply";
 bool paused = true;
 
 extern vector<float> distances2;
@@ -32,16 +32,17 @@ float centerThicknessThin = 0.8;//thickness close to the edge
 float maxThicknessThin = 1.5;//thickness far from the edge
 float centerThicknessThick = centerThicknessThin;
 float maxThicknessThick = maxThicknessThin;
-/*
+
 float rimT[2] = {.5,.5};
-float edgeT[2] = {.85,.95};
+float edgeT[2] = {.8,.9};
 float midBodyT[2] = {0.9,1.7};
-float bodyT[2] = {1.0,1.8};
-float midBodyDist = 2.5;
+float bodyT[2] = {1.5,1.8};
 float edgeDist = 1.5;
-float maxY = 4.5;
-float minY = 7;
-*/
+float midBodyDist = 6;
+float maxY = 0;
+float minY = 10;
+
+/*
 //florescene engagement ring settings
 float rimT[2] = { .5,1.2 };
 float edgeT[2] = { .75,1.5 };
@@ -51,7 +52,7 @@ float midBodyDist = 2;
 float edgeDist = .7;
 float minY = 5;
 float maxY = 0;
-
+*/
 float rimThick = rimT[0];
 float edgeThick = edgeT[0];
 float bodyThick = bodyT[0];
@@ -61,15 +62,15 @@ float midBodyThick = midBodyT[0];
 
 
 
-bool limitEdge = false;
+bool limitEdge = true;
 
 bool doHoles = false;
 //cuff ellipse
 //necklace? .887, 30.23
 //hoop 0,3.887
 ofVec2f centerPt(0.0,0.0);//(0,3.887);//(-.69,37.66);//-13.78);
-float radX = 9.186;// 32;//8.6;//9.5;//13;//67.157;//62.566;//28.1;//35.485;//9.5;
-float radY = 9.186;// 24.5;//8.6;//9.5;//13;//83.66;//98.76;//35.485;//9.5;
+float radX = 31.37;// 32;//8.6;//9.5;//13;//67.157;//62.566;//28.1;//35.485;//9.5;
+float radY = 25.29;// 24.5;//8.6;//9.5;//13;//83.66;//98.76;//35.485;//9.5;
 
 hemesh hmesh;
 vector<float> a;
