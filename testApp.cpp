@@ -8,8 +8,8 @@ float F = 0.029;//.03
 float k = 0.06;//.063
 float offset = 3.0;//.5;
 float threshold = .45;
-//it doesn't use this, it uses the settings.xml file
-string file = "ringAdjust3_doneJesseEdit.obj";
+//make sure your file has normals and colors
+string file = "ring_size_5.25.obj";
 bool paused = true;
 
 extern vector<float> distances2;
