@@ -8,8 +8,8 @@ float F = 0.029;//.03
 float k = 0.06;//.063
 float offset = 3.0;//.5;
 float threshold = .45;
-//make sure your file has normals and colors
-string file = "E:\\Nervous System Dropbox\\Jessica Rosenkrantz\\_FILES\\jewelry\\florescence jewelry\\micro flora ring\\microFlora_srf_9.ply";
+//make sure your file is a binary ply with normals and colors
+string file = "E:\\Nervous System Dropbox\\Jessica Rosenkrantz\\_FILES\\jewelry\\florescence jewelry\\micro flora ring\\microFlora_srf_11.ply";
 bool paused = true;
 
 extern vector<float> distances2;
