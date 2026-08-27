@@ -9,7 +9,7 @@ float k = 0.06;//.063
 float offset = 3.0;//.5;
 float threshold = .45;
 //make sure your file is a binary ply with normals and colors
-string file = "E:\\Nervous System Dropbox\\Jessica Rosenkrantz\\_FILES\\jewelry\\florescence jewelry\\micro flora ring\\microFlora_srf_11.ply";
+string file = "E:\\Nervous System Dropbox\\Jessica Rosenkrantz\\_FILES\\jewelry\\florescence jewelry\\cnidaria ring\\base surfaces\\cnidariaRing_srf_9.ply";
 bool paused = true;
 
 extern vector<float> distances2;
@@ -34,14 +34,14 @@ float centerThicknessThick = centerThicknessThin;
 float maxThicknessThick = maxThicknessThin;
 
 //microflora ring settings 2026
-float rimT[2] = { .5,.5 };
-float edgeT[2] = { .85,1 };
-float midBodyT[2] = { 0.9,1.25 };
-float bodyT[2] = { 1,1.35 };
+float rimT[2] = { .5,1.2 };
+float edgeT[2] = { .85,2.0 };
+float midBodyT[2] = { 0.9,2.7 };
+float bodyT[2] = { 1,2.7 };
 float midBodyDist = 2;
-float edgeDist = .7;
-float maxY = 4.5;
-float minY = 7;
+float edgeDist = 1.5;
+float maxY =2.6;
+float minY = 6.6;
 
 //florescene engagement ring settings
 /*float rimT[2] = { .5,1.2 };
@@ -62,15 +62,15 @@ float midBodyThick = midBodyT[0];
 
 
 
-bool limitEdge = false;
+bool limitEdge = true;
 
 bool doHoles = false;
 //cuff ellipse
 //necklace? .887, 30.23
 //hoop 0,3.887
 ofVec2f centerPt(0.0,0.0);//(0,3.887);//(-.69,37.66);//-13.78);
-float radX = 9.186;// 32;//8.6;//9.5;//13;//67.157;//62.566;//28.1;//35.485;//9.5;
-float radY = 9.186;// 24.5;//8.6;//9.5;//13;//83.66;//98.76;//35.485;//9.5;
+float radX = 8.6;// 32;//8.6;//9.5;//13;//67.157;//62.566;//28.1;//35.485;//9.5;
+float radY = 8.6;// 24.5;//8.6;//9.5;//13;//83.66;//98.76;//35.485;//9.5;
 
 hemesh hmesh;
 vector<float> a;
